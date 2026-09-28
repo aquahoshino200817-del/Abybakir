@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Ковёр Жизни — Викторина «Зелёная Пиала»</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        orientGold: '#f59e0b',
+                        orientRuby: '#991b1b',
+                        orientEmerald: '#059669',
+                        teaBg: '#1c1917',
+                        cardDark: '#262626'
+                    },
+                    fontFamily: {
+                        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
+                        sans: ['Montserrat', 'Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QRCode JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #0c0a09;
+            background-image: 
+                radial-gradient(circle at 50% 15%, rgba(217, 119, 6, 0.18), transparent 65%),
+                radial-gradient(circle at 85% 85%, rgba(5, 150, 105, 0.12), transparent 55%),
+                radial-gradient(#2b211b 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 28px 28px;
+            color: #f3f4f6;
+            min-height: 100dvh;
+        }
+
+        .font-legend {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* Loom frame border with oriental wood texture gradient */
+        .loom-border {
+            border: 6px solid #78350f;
+            border-image: linear-gradient(to bottom right, #d97706, #78350f, #451a03) 1;
+            box-shadow: 0 0 25px rgba(217, 119, 6, 0.25), inset 0 0 20px rgba(0,0,0,0.9);
+        }
+
+        /* Steam particles animation above piala icon */
+        .steam-wrap {
+            position: relative;
+            display: inline-block;
+        }
+
+        .steam-particle {
+            position: absolute;
+            top: -10px;
+            width: 5px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: riseAndFade 2.2s infinite ease-out;
+        }
+        .steam-1 { left: 25%; animation-delay: 0.2s; }
+        .steam-2 { left: 50%; animation-delay: 0.8s; }
+        .steam-3 { left: 75%; animation-delay: 1.4s; }
+
+        @keyframes riseAndFade {
+            0% { transform: translateY(0) scaleX(1); opacity: 0; }
+            40% { opacity: 0.8; }
+            100% { transform: translateY(-22px) scaleX(2.5); opacity: 0; }
+        }
+
+        /* Golden thread glowing pulse */
+        @keyframes threadGlow {
+            0%, 100% { filter: drop-shadow(0 0 3px rgba(245, 158, 11, 0.5)); }
+            50% { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.9)); }
+        }
+        .active-carpet-layer {
+            animation: threadGlow 2.5s infinite ease-in-out;
+        }
+
+        /* Gold gradient text */
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .touch-btn {
+            transition: transform 0.12s ease, background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .touch-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Sparkle particle overlay */
+        #sparkleCanvas {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 99;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between p-3 sm:p-5 md:p-6">
+
+    <canvas id="sparkleCanvas"></canvas>
+
+    <!-- Header Navigation -->
+    <header class="w-full max-w-4xl bg-stone-900/95 border border-amber-900/40 rounded-2xl p-3 sm:p-4 mb-3 backdrop-blur-md flex justify-between items-center shadow-xl">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-emerald-950 to-stone-900 border border-emerald-500/50 flex items-center justify-center text-emerald-400 text-xl sm:text-2xl shadow-md relative shrink-0">
+                <i class="fa-solid fa-mug-hot"></i>
+                <span class="steam-wrap">
+                    <span class="steam-particle steam-1"></span>
+                    <span class="steam-particle steam-2"></span>
+                    <span class="steam-particle steam-3"></span>
+                </span>
+            </div>
+            <div>
+                <h1 class="font-legend text-xl sm:text-2xl font-bold gold-gradient-text leading-none">Зелёная Пиала</h1>
+                <p class="text-[10px] sm:text-xs text-amber-200/70 italic">Викторина «Ковёр Жизни»</p>
+            </div>
+        </div>
+
+        <!-- Live Score Counter and Actions -->
+        <div class="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+            <button onclick="toggleQRModal()" class="touch-btn bg-stone-950/90 hover:bg-stone-800 border border-amber-700/60 text-amber-300 px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-sm" title="QR-код для мобильного">
+                <i class="fa-solid fa-qrcode text-amber-400 text-sm"></i>
+                <span class="hidden sm:inline font-medium">QR-код</span>
+            </button>
+            <div class="flex items-center gap-1.5 bg-stone-950/90 px-2.5 py-1.5 rounded-xl border border-stone-800">
+                <i class="fa-solid fa-droplet text-emerald-400 animate-pulse text-xs"></i>
+                <span class="text-stone-400 hidden xs:inline text-[11px]">Пиала:</span>
+                <span id="pialaLevel" class="font-bold text-emerald-400">0%</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-stone-950/90 px-2.5 py-1.5 rounded-xl border border-stone-800">
+                <i class="fa-solid fa-scroll text-amber-400 text-xs"></i>
+                <span class="text-stone-400 hidden xs:inline text-[11px]">Нити:</span>
+                <span id="threadCount" class="font-bold text-amber-400">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="w-full max-w-4xl flex-grow flex flex-col justify-center">
+
+        <!-- INTRO SCREEN -->
+        <section id="introScreen" class="bg-stone-900/90 border border-amber-900/40 rounded-3xl p-5 sm:p-8 text-center flex flex-col items-center justify-center min-h-[440px] shadow-2xl relative overflow-hidden backdrop-blur-sm">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-stone-950/80 rounded-full border-2 border-amber-500/40 flex items-center justify-center text-4xl sm:text-5xl text-amber-400 mb-4 shadow-2xl relative">
+                🍵
+                <span class="steam-wrap">
+                    <span class="steam-particle steam-1"></span>
+                    <span class="steam-particle steam-2"></span>
+                    <span class="steam-particle steam-3"></span>
+                </span>
+            </div>
+
+            <h2 class="font-legend text-3xl sm:text-5xl font-bold text-amber-400 mb-2">Ковёр Жизни</h2>
+            <p class="text-amber-200/80 text-[11px] sm:text-sm uppercase tracking-widest font-semibold mb-4">Викторина по мотивам книги А. Александровой и М. Туберовского</p>
+            
+            <p class="text-stone-300 text-xs sm:text-base max-w-2xl mb-6 leading-relaxed font-light">
+                В уютной чайхане старый мастер **Чепер** ткёт свой легендарный ковёр. <br class="hidden sm:inline">
+                Отвечайте на вопросы аксакалов! Каждый верный ответ натягивает золотые нити и проявляет удивительный орнамент на старинном ткацком станке.
+            </p>
+
+            <div class="grid grid-cols-3 gap-2.5 sm:gap-4 w-full max-w-2xl mb-6 text-xs text-stone-300">
+                <div class="bg-stone-950/70 p-3 sm:p-4 rounded-2xl border border-stone-800 flex flex-col items-center justify-center">
+                    <i class="fa-solid fa-book-open text-amber-400 text-lg sm:text-2xl mb-1.5"></i>
+                    <span class="font-semibold text-stone-100 text-[11px] sm:text-xs">10 Вопросов</span>
+                    <span class="text-stone-400 text-[10px] hidden sm:block text-center mt-0.5">Литература и мудрость</span>
+                </div>
+                <div class="bg-stone-950/70 p-3 sm:p-4 rounded-2xl border border-stone-800 flex flex-col items-center justify-center">
+                    <i class="fa-solid fa-dharmachakra text-emerald-400 text-lg sm:text-2xl mb-1.5"></i>
+                    <span class="font-semibold text-stone-100 text-[11px] sm:text-xs">Живой Станок</span>
+                    <span class="text-stone-400 text-[10px] hidden sm:block text-center mt-0.5">Проявление ковра</span>
+                </div>
+                <div class="bg-stone-950/70 p-3 sm:p-4 rounded-2xl border border-stone-800 flex flex-col items-center justify-center">
+                    <i class="fa-solid fa-gem text-amber-400 text-lg sm:text-2xl mb-1.5"></i>
+                    <span class="font-semibold text-stone-100 text-[11px] sm:text-xs">Титулы</span>
+                    <span class="text-stone-400 text-[10px] hidden sm:block text-center mt-0.5">Признание сказителей</span>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="touch-btn bg-gradient-to-r from-amber-600 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-400 text-stone-950 font-bold py-3.5 px-8 sm:px-10 rounded-2xl shadow-xl hover:shadow-amber-500/20 text-base sm:text-lg border border-amber-300/40 flex items-center gap-2.5">
+                <i class="fa-solid fa-feather-pointed"></i> Войти в Чайхану
+            </button>
+        </section>
+
+        <!-- QUIZ GAME SCREEN -->
+        <section id="quizScreen" class="hidden flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-6">
+
+            <!-- Loom & SVG Carpet Column -->
+            <div class="lg:col-span-5 bg-stone-900/90 border border-amber-900/40 rounded-3xl p-3.5 sm:p-5 flex flex-col items-center justify-between shadow-2xl relative">
+                <div class="w-full flex justify-between items-center mb-1">
+                    <span class="text-[10px] sm:text-xs uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-sliders"></i> Станок Мастера
+                    </span>
+                    <span id="carpetPercent" class="text-[11px] sm:text-xs bg-emerald-950/80 px-2.5 py-0.5 rounded-lg border border-emerald-700/60 text-emerald-300 font-semibold">
+                        Узор: 0%
+                    </span>
+                </div>
+
+                <!-- SVG Loom Graphic -->
+                <div class="relative w-full max-w-[170px] sm:max-w-[240px] lg:max-w-[270px] aspect-[3/4] loom-border rounded-lg bg-stone-950 overflow-hidden my-1 sm:my-2 flex flex-col justify-between">
+                    <svg id="carpetCanvas" viewBox="0 0 300 400" class="w-full h-full rounded transition-all duration-700">
+                        <rect x="0" y="0" width="300" height="400" fill="#2d0612" />
+                        
+                        <!-- Top and Bottom Fringes -->
+                        <path d="M 0 6 L 300 6 M 0 394 L 300 394" stroke="#f59e0b" stroke-width="8" stroke-dasharray="3,3" />
+
+                        <!-- Layer 0: Frame Base -->
+                        <g id="carpetL0" opacity="0.2">
+                            <rect x="16" y="16" width="268" height="368" fill="none" stroke="#991b1b" stroke-width="12" />
+                            <rect x="28" y="28" width="244" height="344" fill="none" stroke="#d97706" stroke-width="3" stroke-dasharray="6,6" />
+                        </g>
+
+                        <!-- Layer 1: Corners (Q1-Q2) -->
+                        <g id="carpetL1" opacity="0" class="transition-opacity duration-1000">
+                            <polygon points="35,35 80,35 35,80" fill="#059669" />
+                            <polygon points="265,35 220,35 265,80" fill="#059669" />
+                            <polygon points="35,365 80,365 35,320" fill="#059669" />
+                            <polygon points="265,365 220,365 265,320" fill="#059669" />
+                        </g>
+
+                        <!-- Layer 2: Diamond Borders (Q3-Q4) -->
+                        <g id="carpetL2" opacity="0" class="transition-opacity duration-1000">
+                            <rect x="44" y="44" width="212" height="312" fill="none" stroke="#f59e0b" stroke-width="5" />
+                            <path d="M 44 44 L 256 356 M 256 44 L 44 356" stroke="#b91c1c" stroke-width="2" opacity="0.5"/>
+                            <rect x="56" y="56" width="188" height="288" fill="none" stroke="#047857" stroke-width="2" stroke-dasharray="4,4" />
+                        </g>
+
+                        <!-- Layer 3: Central Medallion (Q5-Q6) -->
+                        <g id="carpetL3" opacity="0" class="transition-opacity duration-1000">
+                            <polygon points="150,100 220,200 150,300 80,200" fill="#7f1d1d" stroke="#f59e0b" stroke-width="4" />
+                            <circle cx="150" cy="200" r="48" fill="#065f46" stroke="#fbbf24" stroke-width="3" />
+                        </g>
+
+                        <!-- Layer 4: Solar Motifs & Flowers (Q7-Q8) -->
+                        <g id="carpetL4" opacity="0" class="transition-opacity duration-1000">
+                            <circle cx="150" cy="200" r="28" fill="#d97706" />
+                            <path d="M 150 150 L 150 250 M 100 200 L 200 200" stroke="#fef08a" stroke-width="4" />
+                            <circle cx="90" cy="110" r="14" fill="#d97706" stroke="#fef08a" stroke-width="2"/>
+                            <circle cx="210" cy="110" r="14" fill="#d97706" stroke="#fef08a" stroke-width="2"/>
+                            <circle cx="90" cy="290" r="14" fill="#d97706" stroke="#fef08a" stroke-width="2"/>
+                            <circle cx="210" cy="290" r="14" fill="#d97706" stroke="#fef08a" stroke-width="2"/>
+                        </g>
+
+                        <!-- Layer 5: Golden Master Details (Q9-Q10) -->
+                        <g id="carpetL5" opacity="0" class="transition-opacity duration-1000 active-carpet-layer">
+                            <polygon points="150,175 168,200 150,225 132,200" fill="#fef08a" />
+                            <circle cx="150" cy="200" r="66" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8,4" />
+                            <rect x="68" y="68" width="164" height="264" fill="none" stroke="#34d399" stroke-width="2" />
+                        </g>
+                    </svg>
+                </div>
+
+                <p id="loomStatus" class="text-[11px] sm:text-xs text-stone-400 text-center italic mt-0.5 min-h-[24px] flex items-center justify-center">
+                    Основа ковра натянута на станок...
+                </p>
+            </div>
+
+            <!-- Quiz Questions Box -->
+            <div class="lg:col-span-7 bg-stone-900/90 border border-amber-900/40 rounded-3xl p-4 sm:p-6 flex flex-col justify-between shadow-2xl relative backdrop-blur-sm">
+
+                <div>
+                    <div class="flex justify-between items-center mb-2.5 sm:mb-4">
+                        <span id="questionNumTag" class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-amber-400 bg-stone-950/80 px-2.5 py-1 rounded-full border border-stone-800">
+                            Вопрос 1 из 10
+                        </span>
+                        
+                        <button id="hintButton" onclick="triggerAksakalHint()" class="touch-btn text-[11px] sm:text-xs bg-amber-950/80 hover:bg-amber-900/80 text-amber-300 px-3 py-1 rounded-xl border border-amber-700/50 transition flex items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-lightbulb text-amber-400"></i> Совет Аксакала
+                        </button>
+                    </div>
+
+                    <h3 id="questionContent" class="font-legend text-lg sm:text-2xl text-stone-100 font-semibold mb-3 sm:mb-6 leading-snug min-h-[50px] sm:min-h-[60px]">
+                        Загрузка вопроса...
+                    </h3>
+
+                    <!-- Hint Box Container -->
+                    <div id="hintContainer" class="hidden mb-3 p-3 bg-amber-950/40 border border-amber-600/40 rounded-xl text-xs text-amber-200/90 italic flex items-start gap-2">
+                        <i class="fa-solid fa-quote-left text-amber-500 text-sm mt-0.5"></i>
+                        <span id="hintContent">Текст подсказки...</span>
+                    </div>
+                </div>
+
+                <!-- Answer Options Grid -->
+                <div id="answersGrid" class="grid grid-cols-1 gap-2.5 my-1 sm:my-2">
+                    <!-- Dynamic buttons -->
+                </div>
+
+                <!-- Explanation Banner -->
+                <div id="explanationBanner" class="hidden p-3.5 rounded-2xl border text-xs sm:text-sm my-2 transition-all">
+                    <p id="explanationHeader" class="font-bold mb-0.5"></p>
+                    <p id="explanationBody" class="text-stone-300 leading-relaxed text-[11px] sm:text-xs md:text-sm"></p>
+                </div>
+
+                <!-- Footer Navigation Controls -->
+                <div class="flex justify-between items-center pt-2.5 mt-2 border-t border-stone-800/80">
+                    <div class="text-[10px] sm:text-[11px] text-stone-500">
+                        «Зелёная пиала» (Детгиз)
+                    </div>
+                    <button id="nextQuestionBtn" onclick="handleNextStep()" class="touch-btn hidden bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-stone-950 font-bold px-5 sm:px-6 py-2.5 rounded-xl shadow-lg transition flex items-center gap-2 text-xs sm:text-sm">
+                        Следующий <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- FINAL RESULTS SCREEN -->
+        <section id="resultScreen" class="hidden bg-stone-900/90 border border-amber-900/40 rounded-3xl p-5 sm:p-8 text-center flex flex-col items-center justify-center min-h-[460px] shadow-2xl backdrop-blur-sm">
+            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-amber-500/20 text-amber-400 rounded-full flex items-center justify-center text-3xl sm:text-4xl mb-3 border border-amber-500/40 shadow-xl">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h2 class="font-legend text-2xl sm:text-5xl font-bold gold-gradient-text mb-1">Ковёр Жизни Соткан!</h2>
+            <p id="finalMasterTitle" class="text-emerald-400 font-semibold text-sm sm:text-lg mb-4">Титул: Мастер Узоров</p>
+
+            <div class="grid grid-cols-3 gap-2 sm:gap-4 w-full max-w-lg mb-6 text-center">
+                <div class="bg-stone-950/80 p-2.5 sm:p-4 rounded-2xl border border-stone-800">
+                    <p class="text-[10px] sm:text-xs text-stone-400">Правильно</p>
+                    <p id="finalCorrectCount" class="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5">0/10</p>
+                </div>
+                <div class="bg-stone-950/80 p-2.5 sm:p-4 rounded-2xl border border-stone-800">
+                    <p class="text-[10px] sm:text-xs text-stone-400">Пиала</p>
+                    <p id="finalPialaLevel" class="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5">0%</p>
+                </div>
+                <div class="bg-stone-950/80 p-2.5 sm:p-4 rounded-2xl border border-stone-800">
+                    <p class="text-[10px] sm:text-xs text-stone-400">Нити</p>
+                    <p id="finalThreadsCount" class="text-lg sm:text-2xl font-bold text-amber-300 mt-0.5">0</p>
+                </div>
+            </div>
+
+            <p id="finalDescription" class="text-stone-300 text-xs sm:text-sm max-w-xl mb-6 leading-relaxed font-light">
+                Благодарим вас за путешествие по сказкам среднеазиатских мастеров!
+            </p>
+
+            <div class="flex flex-wrap gap-3 justify-center">
+                <button onclick="restartGame()" class="touch-btn bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-bold px-6 sm:px-8 py-3 rounded-xl transition flex items-center gap-2 text-sm sm:text-base shadow-lg">
+                    <i class="fa-solid fa-rotate-right"></i> Соткать снова
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full max-w-4xl text-center text-[10px] sm:text-xs text-stone-500 my-3">
+        Викторина создана по мотивам книги А. Александровой и М. Туберовского «Зелёная пиала» (Ленинград, 1958).
+    </footer>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-stone-900 border border-amber-800/60 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl relative">
+            <button onclick="toggleQRModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-200 text-xl w-8 h-8 flex items-center justify-center rounded-full bg-stone-800/80">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div class="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/40 flex items-center justify-center text-2xl mx-auto mb-3">
+                <i class="fa-solid fa-qrcode"></i>
+            </div>
+
+            <h3 class="font-legend text-2xl font-bold text-amber-400 mb-1">Открыть на смартфоне</h3>
+            <p class="text-xs text-stone-300 mb-4">Отсканируйте QR-код для запуска игры на мобильном устройстве</p>
+
+            <div class="bg-white p-4 rounded-2xl shadow-inner inline-block my-2 border-2 border-amber-500/50">
+                <div id="qrcodeCanvas" class="flex justify-center items-center min-w-[180px] min-h-[180px]"></div>
+            </div>
+
+            <div class="mt-4 flex gap-2">
+                <input id="qrUrlInput" type="text" class="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-xs text-stone-300 focus:outline-none focus:border-amber-500" placeholder="Ссылка...">
+                <button onclick="copyPageUrl()" class="bg-amber-600 hover:bg-amber-500 text-stone-950 px-3 py-2 rounded-xl text-xs font-bold shrink-0 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-copy"></i>
+                </button>
+            </div>
+
+            <p id="copyToast" class="text-[11px] text-emerald-400 mt-2 h-4 opacity-0 transition-opacity">Ссылка скопирована!</p>
+        </div>
+    </div>
+
+    <script>
+        // Web Audio Synthesizer
+        let audioCtx = null;
+
+        const initOrResumeAudio = () => {
+            try {
+                if (!audioCtx) {
+                    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtxClass) {
+                        audioCtx = new AudioCtxClass();
+                    }
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) {
+                // Ignore audio restriction errors
+            }
+        };
+
+        const playAudioSound = (type) => {
+            initOrResumeAudio();
+            if (!audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'correct') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.frequency.exponentialRampToValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                } else if (type === 'wrong') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(170, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(85, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+                } else if (type === 'hint') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.5);
+                } else if (type === 'victory') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.6);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.7);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.7);
+                }
+            } catch (e) {
+                // Audio silent fallback
+            }
+        };
+
+        // Questions Database
+        const questionsList = [
+            {
+                category: "Чайхана Сказаний",
+                question: "Согласно закону заветной зелёной пиалы, что обязан сделать каждый, кто выпьет из неё горячего чая?",
+                options: [
+                    { text: "Заплатить золотой монетой чайханщику", isCorrect: false },
+                    { text: "Рассказать легенду или быль отцов и дедов", isCorrect: true },
+                    { text: "Соткать узор ковра для чайханы", isCorrect: false },
+                    { text: "Сложить песню о любви и пустыне", isCorrect: false }
+                ],
+                hint: "Заветная пиала зовётся «чашей рассказов». Слушатели ждут не монет, а мудрого слова.",
+                explanation: "В рамочной повести сборника зелёная пиала переходит от одного рассказчика к другому: каждый, выпив чаю, делится захватывающей историей."
+            },
+            {
+                category: "Мастер Чепер",
+                question: "Как зовут легендарного мастера-ковровщика из сказки «Ковёр жизни», прославившегося на весь край?",
+                options: [
+                    { text: "Старый мастер Чепер", isCorrect: true },
+                    { text: "Аксакал Курбан", isCorrect: false },
+                    { text: "Ювелир Джамал", isCorrect: false },
+                    { text: "Гончар Аман", isCorrect: false }
+                ],
+                hint: "Его имя ассоциируется с ловкими пальцами и непревзойденным искусством ткацкого станка.",
+                explanation: "Мастер Чепер славился по всей стране своими волшебными коврами и не доверил бы ремесло никому без проверки характера."
+            },
+            {
+                category: "Испытание Сердца",
+                question: "Почему мастер Чепер долго не соглашался брать к себе учеников, несмотря на уговоры?",
+                options: [
+                    { text: "Ему не хватало пряжи и денег на пропитание", isCorrect: false },
+                    { text: "Он искал ученика с чистой душой и добрым сердцем", isCorrect: true },
+                    { text: "Местные ханы запретили ему передавать секреты", isCorrect: false },
+                    { text: "Он боялся, что ученики заберут его славу", isCorrect: false }
+                ],
+                hint: "Настоящее ремесло требует не просто ловкости рук, но и глубоких, светлых чувств.",
+                explanation: "Чепер учил, что мёртвая нить оживает лишь тогда, когда ткач вкладывает в орнамент доброту, любовь и радость."
+            },
+            {
+                category: "Символика «Ковра Жизни»",
+                question: "Что олицетворяет собой «Ковёр Жизни» в контексте народных сказаний сборника?",
+                options: [
+                    { text: "Сокровища и родословную местных правителей", isCorrect: false },
+                    { text: "Переплетение человеческих поступков, испытаний и красоты труда", isCorrect: true },
+                    { text: "Тайную карту торговых караванов в Каракумах", isCorrect: false },
+                    { text: "Границы древних сопредельных государств", isCorrect: false }
+                ],
+                hint: "Каждая уложенная нить — это день жизни, а узоры — добрые и честные дела.",
+                explanation: "Ковёр жизни отражает путь человека: светлые и яркие нити символизируют бескорыстный труд и честность, а тёмные — пройденные испытания."
+            },
+            {
+                category: "Атмосфера Сказки",
+                question: "Какая непогода заставила путевых ребят Бяшима и Гюль укрыться в чайхане у стариков?",
+                options: [
+                    { text: "Суровая и внезапная снежная буря", isCorrect: true },
+                    { text: "Проливной летний ливень", isCorrect: false },
+                    { text: "Песчаный знойный суховей", isCorrect: false },
+                    { text: "Густой туман с гор", isCorrect: false }
+                ],
+                hint: "Ребята искали первую весеннюю траву, когда завыл холодный зимний ветер.",
+                explanation: "В завязке книги зимний ураган застает детей в степи, и они находят укрытие у тёплого очага чайханы, где звучат сказки."
+            },
+            {
+                category: "Ткацкое Ремесло",
+                question: "Каким образом народные мастера-ковровщицы передают сюжеты и чувства в своих произведениях?",
+                options: [
+                    { text: "Через традиционные символы: ромбы, гели, солнечные розетки и цвета", isCorrect: true },
+                    { text: "Пишут краской слова поверх шерстяного ворса", isCorrect: false },
+                    { text: "Пришивают драгоценные камни к каждому узлу", isCorrect: false },
+                    { text: "Используют исключительно однотонную серую шерсть", isCorrect: false }
+                ],
+                hint: "Орнамент Средней Азии — это зашифрованный язык природы и духовной жизни.",
+                explanation: "Каждая форма и цвет в ковре имеют свой смысл: красный — цвет огня и жизни, зелёный — весеннее процветание, а золотой — свет солнца."
+            },
+            {
+                category: "Главный Урок",
+                question: "Какова главная нравственная мысль сказок об умельцах из сборника «Зелёная пиала»?",
+                options: [
+                    { text: "Богатство ханов всегда побеждает простой народ", isCorrect: false },
+                    { text: "Настоящий талант и честный труд ценнее всех сокровищ баев", isCorrect: true },
+                    { text: "Ремесло нужно держать в строжайшей тайне от всех", isCorrect: false },
+                    { text: "Успех зависит исключительно от удачи и хитрости", isCorrect: false }
+                ],
+                hint: "Сказки прославляют трудолюбивых мастеров — гончаров, ткачей, ювелиров.",
+                explanation: "Все сказания сборника доказывают: гордые ханы и баи бессильны перед искусством и мудростью простого народа."
+            },
+            {
+                category: "Орнаменты и Природа",
+                question: "Какое растение часто становится центральным мотивом восточного ковра, обозначая изобилие?",
+                options: [
+                    { text: "Древо жизни и цветущий гранат", isCorrect: true },
+                    { text: "Морская водоросль", isCorrect: false },
+                    { text: "Сосновая шишка", isCorrect: false },
+                    { text: "Горный эдельвейс", isCorrect: false }
+                ],
+                hint: "В пустынных краях этот плод с красными зернами означает плодородие и радость.",
+                explanation: "«Древо жизни» и цветы граната — ключевые восточные символы процветания, часто украшающие медальон ковра."
+            },
+            {
+                category: "Секрет Мастерства",
+                question: "Что помогло юному ученику Чепера заставить свой первый ковёр заиграть живыми красками?",
+                options: [
+                    { text: "Искренняя любовь к родной земле и людям", isCorrect: true },
+                    { text: "Применение дорогой импортной краски", isCorrect: false },
+                    { text: "Точное и слепое копирование чужих рисунков", isCorrect: false },
+                    { text: "Использование волшебных заклинаний", isCorrect: false }
+                ],
+                hint: "Без глубокого чувства рисунок на ткацком станке остаётся лишь холодным узором.",
+                explanation: "Ученик смог соткать настоящий шедевр только тогда, когда вложил в него свои впечатления о родном крае и светлые мысли."
+            },
+            {
+                category: "Завершение Легенды",
+                question: "Какое ощущение дарует окружающим завершённый «Ковёр Жизни», сотканный истинным мастером?",
+                options: [
+                    { text: "Ощущение гармонии, тепла, света и душевного мира", isCorrect: true },
+                    { text: "Он немедленно превращается в слиток золота", isCorrect: false },
+                    { text: "Он тускнеет и теряет все свои цвета", isCorrect: false },
+                    { text: "Он взмывает в воздух как ковёр-самолёт", isCorrect: false }
+                ],
+                hint: "Настоящее народное искусство обладает глубоким духовным воздействием.",
+                explanation: "Завершённый ковёр мастера наполняет дом уютом и светом, словно цветущий весенний сад посреди пустыни."
+            }
+        ];
+
+        // Game State Variables
+        let currentIdx = 0;
+        let correctAnswers = 0;
+        let pialaFillPercent = 0;
+        let totalGoldThreads = 0;
+        let isQuestionAnswered = false;
+
+        // DOM Element references
+        const introScreen = document.getElementById('introScreen');
+        const quizScreen = document.getElementById('quizScreen');
+        const resultScreen = document.getElementById('resultScreen');
+
+        const pialaLevelEl = document.getElementById('pialaLevel');
+        const threadCountEl = document.getElementById('threadCount');
+
+        const questionNumTag = document.getElementById('questionNumTag');
+        const questionContent = document.getElementById('questionContent');
+        const answersGrid = document.getElementById('answersGrid');
+        const hintButton = document.getElementById('hintButton');
+        const hintContainer = document.getElementById('hintContainer');
+        const hintContent = document.getElementById('hintContent');
+
+        const explanationBanner = document.getElementById('explanationBanner');
+        const explanationHeader = document.getElementById('explanationHeader');
+        const explanationBody = document.getElementById('explanationBody');
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn');
+
+        const carpetPercent = document.getElementById('carpetPercent');
+        const loomStatus = document.getElementById('loomStatus');
+
+        // Start Game
+        function startGame() {
+            initOrResumeAudio();
+            introScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+
+            currentIdx = 0;
+            correctAnswers = 0;
+            pialaFillPercent = 0;
+            totalGoldThreads = 0;
+
+            resetCarpetLayers();
+            updateTopStats();
+            renderQuestion();
+        }
+
+        // Reset Carpet SVG Layers
+        function resetCarpetLayers() {
+            for (let i = 1; i <= 5; i++) {
+                const layer = document.getElementById(`carpetL${i}`);
+                if (layer) layer.setAttribute('opacity', '0');
+            }
+            carpetPercent.innerText = 'Узор: 0%';
+            loomStatus.innerText = 'Основа ковра натянута на станок...';
+        }
+
+        // Update Stats Bar
+        function updateTopStats() {
+            pialaLevelEl.innerText = `${pialaFillPercent}%`;
+            threadCountEl.innerText = `${totalGoldThreads}`;
+        }
+
+        // Render current question
+        function renderQuestion() {
+            isQuestionAnswered = false;
+            const q = questionsList[currentIdx];
+
+            questionNumTag.innerText = `Вопрос ${currentIdx + 1} из ${questionsList.length} • ${q.category}`;
+            questionContent.innerText = q.question;
+
+            hintContainer.classList.add('hidden');
+            hintButton.disabled = false;
+            hintButton.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            explanationBanner.classList.add('hidden');
+            nextQuestionBtn.classList.add('hidden');
+
+            answersGrid.innerHTML = '';
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'touch-btn w-full text-left p-3 sm:p-4 rounded-2xl bg-stone-950/80 active:bg-stone-800 border border-stone-800 text-stone-200 text-xs sm:text-sm font-medium flex items-center justify-between group min-h-[50px]';
+                btn.onclick = () => checkAnswer(idx);
+                
+                btn.innerHTML = `
+                    <span class="flex items-center gap-2.5">
+                        <span class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-stone-900 border border-stone-700 flex items-center justify-center text-[11px] sm:text-xs text-amber-400 font-bold shrink-0">
+                            ${String.fromCharCode(1072 + idx).toUpperCase()}
+                        </span>
+                        <span class="leading-tight">${opt.text}</span>
+                    </span>
+                    <i class="fa-regular fa-circle text-stone-600 shrink-0 ml-2"></i>
+                `;
+                answersGrid.appendChild(btn);
+            });
+        }
+
+        // Aksakal Hint
+        function triggerAksakalHint() {
+            if (isQuestionAnswered) return;
+            const q = questionsList[currentIdx];
+            hintContent.innerText = q.hint;
+            hintContainer.classList.remove('hidden');
+            hintButton.disabled = true;
+            hintButton.classList.add('opacity-50', 'cursor-not-allowed');
+            playAudioSound('hint');
+        }
+
+        // Check selected option
+        function checkAnswer(selectedIndex) {
+            if (isQuestionAnswered) return;
+            isQuestionAnswered = true;
+
+            const q = questionsList[currentIdx];
+            const selectedOpt = q.options[selectedIndex];
+            const optionBtns = answersGrid.querySelectorAll('button');
+
+            optionBtns.forEach((btn, idx) => {
+                btn.disabled = true;
+
+                if (q.options[idx].isCorrect) {
+                    btn.classList.add('bg-emerald-950/90', 'border-emerald-500', 'text-emerald-200');
+                    btn.querySelector('i').className = 'fa-solid fa-circle-check text-emerald-400 shrink-0 ml-2';
+                } else if (idx === selectedIndex) {
+                    btn.classList.add('bg-rose-950/90', 'border-rose-500', 'text-rose-200');
+                    btn.querySelector('i').className = 'fa-solid fa-circle-xmark text-rose-400 shrink-0 ml-2';
+                } else {
+                    btn.classList.add('opacity-40');
+                }
+            });
+
+            if (selectedOpt.isCorrect) {
+                correctAnswers++;
+                pialaFillPercent = Math.min(100, pialaFillPercent + 10);
+                totalGoldThreads += 150;
+                playAudioSound('correct');
+                spawnSparkles();
+
+                updateCarpetVisualProgress();
+
+                explanationBanner.className = 'p-3.5 rounded-2xl border border-emerald-800/80 bg-emerald-950/40 text-emerald-200 text-xs sm:text-sm my-2';
+                explanationHeader.innerText = '✨ Верно! Заветная нить легла точно в орнамент.';
+                explanationBody.innerText = q.explanation;
+            } else {
+                playAudioSound('wrong');
+                explanationBanner.className = 'p-3.5 rounded-2xl border border-rose-800/80 bg-rose-950/40 text-rose-200 text-xs sm:text-sm my-2';
+                explanationHeader.innerText = '💡 Аксакал задумчиво говорит:';
+                explanationBody.innerText = q.explanation;
+            }
+
+            explanationBanner.classList.remove('hidden');
+            nextQuestionBtn.classList.remove('hidden');
+            updateTopStats();
+        }
+
+        // Update Carpet Visual Progress
+        function updateCarpetVisualProgress() {
+            const step = Math.ceil((currentIdx + 1) / 2);
+            const opacityValue = Math.min(1, (correctAnswers / (currentIdx + 1)));
+
+            const layer = document.getElementById(`carpetL${step}`);
+            if (layer) {
+                layer.setAttribute('opacity', opacityValue.toFixed(2));
+            }
+
+            const currentCarpetPercent = Math.round((correctAnswers / questionsList.length) * 100);
+            carpetPercent.innerText = `Узор: ${currentCarpetPercent}%`;
+
+            if (currentCarpetPercent >= 80) {
+                loomStatus.innerText = 'Ковёр сияет золотом и изумрудными цветами!';
+            } else if (currentCarpetPercent >= 40) {
+                loomStatus.innerText = 'Центральный медальон наполняется узорами.';
+            } else if (currentCarpetPercent > 0) {
+                loomStatus.innerText = 'Первые узоры закрепились на станке.';
+            }
+        }
+
+        // Handle Next Step
+        function handleNextStep() {
+            currentIdx++;
+            if (currentIdx < questionsList.length) {
+                renderQuestion();
+            } else {
+                displayFinalResults();
+            }
+        }
+
+        // Final Results Display
+        function displayFinalResults() {
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            playAudioSound('victory');
+
+            document.getElementById('finalCorrectCount').innerText = `${correctAnswers}/${questionsList.length}`;
+            document.getElementById('finalPialaLevel').innerText = `${pialaFillPercent}%`;
+            document.getElementById('finalThreadsCount').innerText = `${totalGoldThreads}`;
+
+            const masterTitle = document.getElementById('finalMasterTitle');
+            const description = document.getElementById('finalDescription');
+
+            if (correctAnswers === 10) {
+                masterTitle.innerText = 'Титул: Великий Мастер Чепер';
+                description.innerText = 'Потрясающе! Вы безупречно знаете сюжет, нравственную глубину и символику сказок сборника «Зелёная пиала». Сотканный вами «Ковёр Жизни» достоин стать главным украшением восточных сказаний!';
+            } else if (correctAnswers >= 7) {
+                masterTitle.innerText = 'Титул: Искусный Мастер-Ковровщик';
+                description.innerText = 'Замечательный результат! Вы тонко чувствуете поэтичность народных преданий и сохранили традиции стариков чайханы.';
+            } else if (correctAnswers >= 4) {
+                masterTitle.innerText = 'Титул: Ученик Чайханы';
+                description.innerText = 'Хорошая попытка! Вы услышали немало мудрых историй, однако некоторые секретные узоры мастера Чепера ещё ждут своего часа.';
+            } else {
+                masterTitle.innerText = 'Титул: Почётный Гость';
+                description.innerText = 'Снежная буря стихла! Рекомендуем прочесть чудесную книгу А. Александровой и М. Туберовского «Зелёная пиала», чтобы открыть все тайны искусных мастеров.';
+            }
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+        // QR Code Modal Functions
+        function toggleQRModal() {
+            const modal = document.getElementById('qrModal');
+            const isHidden = modal.classList.contains('hidden');
+            
+            if (isHidden) {
+                modal.classList.remove('hidden');
+                generateQRCode();
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function generateQRCode() {
+            const container = document.getElementById('qrcodeCanvas');
+            const input = document.getElementById('qrUrlInput');
+            
+            let currentUrl = window.location.href;
+            if (currentUrl.startsWith('about:') || currentUrl.startsWith('blob:')) {
+                currentUrl = 'https://github.com';
+            }
+            
+            input.value = currentUrl;
+            container.innerHTML = '';
+
+            try {
+                if (window.QRCode) {
+                    new QRCode(container, {
+                        text: currentUrl,
+                        width: 180,
+                        height: 180,
+                        colorDark: "#1c1917",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                } else {
+                    container.innerHTML = `<img src="https://quickchart.io/qr?text=${encodeURIComponent(currentUrl)}&size=180" alt="QR Code" class="w-[180px] h-[180px]">`;
+                }
+            } catch (e) {
+                container.innerHTML = `<img src="https://quickchart.io/qr?text=${encodeURIComponent(currentUrl)}&size=180" alt="QR Code" class="w-[180px] h-[180px]">`;
+            }
+        }
+
+        function copyPageUrl() {
+            const input = document.getElementById('qrUrlInput');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                const toast = document.getElementById('copyToast');
+                toast.classList.remove('opacity-0');
+                setTimeout(() => toast.classList.add('opacity-0'), 2000);
+            } catch (err) {
+                // Clipboard fallback
+            }
+        }
+
+        // Sparkles Canvas Animation Effect
+        const sparkleCanvas = document.getElementById('sparkleCanvas');
+        const ctx = sparkleCanvas.getContext('2d');
+        let particles = [];
+
+        function resizeSparkleCanvas() {
+            sparkleCanvas.width = window.innerWidth;
+            sparkleCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeSparkleCanvas);
+        resizeSparkleCanvas();
+
+        function spawnSparkles() {
+            for (let i = 0; i < 30; i++) {
+                particles.push({
+                    x: window.innerWidth / 2 + (Math.random() - 0.5) * 200,
+                    y: window.innerHeight / 2 + (Math.random() - 0.5) * 200,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6 - 2,
+                    size: Math.random() * 4 + 2,
+                    color: Math.random() > 0.5 ? '#f59e0b' : '#34d399',
+                    alpha: 1,
+                    life: 0.02 + Math.random() * 0.02
+                });
+            }
+        }
+
+        function animateSparkles() {
+            ctx.clearRect(0, 0, sparkleCanvas.width, sparkleCanvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.life;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+            requestAnimationFrame(animateSparkles);
+        }
+        animateSparkles();
+    </script>
+</body>
+</html>
